@@ -1,6 +1,12 @@
+-- Showing Schemas
+SHOW DATABASES;
 -- Creating Table if not Exists
 USE envdev;
-
+SHOW TABLES;
+-- SHOW VIEWS
+SHOW FULL TABLES IN sys WHERE TABLE_TYPE LIKE 'VIEW';
+-- SHOW PROCEDURES
+SHOW PROCEDURE STATUS WHERE Db = 'envdev';
 -- Table Customers
 Create Table if Not Exists Customers (
     Customer_Id int Not Null,
@@ -11,9 +17,8 @@ Create Table if Not Exists Customers (
     Value_Total decimal(10,2) Not Null,
     Primary Key (Customer_Id)
 );
-
 -- Introducing the Table Creation to one procedure
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CreateTable`()
+CREATE DEFINER=`root`@`localhost` PROCEDURE `criartabela`()
 BEGIN
 	Create Table if Not Exists Customers (
 		Customer_Id int Not Null,
@@ -25,14 +30,12 @@ BEGIN
 		Primary Key (Customer_Id)
 	);
 END
-
--- Test Procedure
-CALL CreateTable();
-
+-- CALL STORED PROCEDURE
+CALL criartabela;
 -- Check Folder Permission to upload file *Config File: "C:\ProgramData\MySQL\MySQL Server 8.0\my.ini"
 SELECT @@secure_file_priv;
-
 -- Upload CSV File to Table (Enable file my.ini Configuration to make effect in csv import)
+-- ***** load data file is not supported in procedures
 LOAD DATA INFILE "C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/Customers.csv"
 INTO TABLE customers
 FIELDS TERMINATED BY ","
@@ -41,11 +44,9 @@ LINES TERMINATED BY "\n"
 IGNORE 1 ROWS;
 -- Check Table Created
 SELECT * FROM customers;
-
 -- Checking the total Value in customers table
 SELECT SUM(Value_Total) as Total_Table
 FROM customers;
-
 -- Checking the total value in a calculated table
 SELECT SUM(Total_Value) as Total_Sum
 FROM (
@@ -53,26 +54,6 @@ FROM (
     FROM customers
     GROUP BY Customer_Id
 ) subquery;
-
--- Creating the View of Calculated Table
-CREATE 
-    ALGORITHM = UNDEFINED 
-    DEFINER = `root`@`localhost` 
-    SQL SECURITY DEFINER
-VIEW `calculatedcostumers` AS
-    SELECT 
-        `customers`.`Customer_Id` AS `Customer_ID`,
-        `customers`.`Customer_Name` AS `Customer_Name`,
-        `customers`.`Product_Name` AS `Product_Name`,
-        `customers`.`Product_Volume` AS `Product_Volume`,
-        `customers`.`Value_UnitPrice` AS `Value_UnitPrice`,
-        ((`customers`.`Product_Volume` / 100) * (`customers`.`Value_UnitPrice` * 200)) AS `TotalCalculated`
-    FROM
-        `customers`
-        
--- Generate the View calculatedcostumers
-SELECT * FROM calculatedcostumers
-
 -- Checking The Difference Between Customers Table and Calculated Table using difference view
 CREATE
 	ALGORITHM = UNDEFINED DEFINER = `root`@`localhost`
@@ -95,7 +76,16 @@ FROM
 
 -- Creating View of Difference
 select * from difference
-
+-- Creating View of calculatedcostumers
+SELECT Customer_Id as Customer_ID,
+       Customer_Name,
+       Product_Name,
+       Product_Volume,
+       Value_UnitPrice,
+       ((Product_Volume / 100) * (Value_UnitPrice * 200)) as TotalCalculated
+FROM customers
+-- Creating View of calculatedcostumers
+select * from calculatedcostumers
 -- Indentify The Row have Difference
 SELECT customers.Customer_Id,
        customers.Customer_Name,
